@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Node / Frontend
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Databases / local data
+*.db
+*.sqlite
+*.sqlite3
+data/raw/
+data/cache/
+
+# Secrets and credentials
+*.pem
+*.key
+secrets/
+.secrets/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dagster
+$DAGSTER_HOME/
+
+# Docker volumes
+postgres-data/
+redis-data/
+minio-data/
+opensearch-data/
+
+# LLM / model weights (never commit these)
+models/
+*.gguf
+*.safetensors
+*.bin
+
+# Logs
+*.log
+logs/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
