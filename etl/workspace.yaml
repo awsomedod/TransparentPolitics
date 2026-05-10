@@ -1,0 +1,6 @@
+# Tells the Dagster webserver where to find the Definitions object.
+# Run the UI with: dagster dev  (from the etl/ directory)
+load_from:
+  - python_file:
+      relative_path: repository.py
+      location_name: transparentpolitics
