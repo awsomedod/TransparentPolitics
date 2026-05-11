@@ -21,6 +21,19 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+# Tables that belong to our application (derived from ORM models).
+# Alembic will only create/alter/drop these — PostGIS extension tables,
+# TIGER geocoder tables, and topology tables are left untouched.
+_our_tables: set[str] = set(target_metadata.tables.keys())
+
+
+def include_object(object, name, type_, reflected, compare_to):  # noqa: A002
+    """Filter Alembic's autogenerate to only manage our own tables."""
+    if type_ == "table":
+        return name in _our_tables
+    # Always include indexes and constraints that belong to our tables.
+    return True
+
 
 def run_migrations_offline() -> None:
     """Run migrations without a live DB connection (outputs SQL to stdout)."""
@@ -30,13 +43,18 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_object=include_object,
+    )
     with context.begin_transaction():
         context.run_migrations()
 
