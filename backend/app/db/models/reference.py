@@ -7,7 +7,7 @@ migration time. All other models depend on these.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -58,7 +58,5 @@ class DataSource(Base):
     type: Mapped[str] = mapped_column(String(50), nullable=False)  # api|bulk|rss|manual
     license: Mapped[str | None] = mapped_column(Text)
     attribution_text: Mapped[str | None] = mapped_column(Text)
-    bias_rating: Mapped[str | None] = mapped_column(String(50))
-    credibility_rating: Mapped[str | None] = mapped_column(String(50))
     last_fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     fetch_frequency: Mapped[str | None] = mapped_column(String(50))
