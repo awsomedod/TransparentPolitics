@@ -14,7 +14,7 @@ import logging
 from typing import Any
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class MemberSummary(_AliasModel):
     bioguide_id: str = Field(alias="bioguideId")
     name: str                                         # "Last, First" format
     party_name: str | None = Field(None, alias="partyName")
-    state: str | None = None                          # 2-letter code
+    state: str | None = None                          # full state name e.g. "Kentucky"
     district: int | None = None                       # House only; None for Senate
 
 
@@ -74,13 +74,22 @@ class MemberDetail(_AliasModel):
     # Congress.gov may return either or both name formats.
     direct_order_name: str | None = Field(None, alias="directOrderName")   # "First Last"
     inverted_order_name: str | None = Field(None, alias="invertedOrderName")  # "Last, First"
+    # API returns birthYear/deathYear as strings ("1942"), not integers.
     birth_year: int | None = Field(None, alias="birthYear")
     death_year: int | None = Field(None, alias="deathYear")
     official_website_url: str | None = Field(None, alias="officialWebsiteUrl")
-    state: str | None = None
+    state: str | None = None                          # full state name e.g. "Kentucky"
     district: int | None = None
     party_history: list[PartyHistoryItem] = Field(default_factory=list, alias="partyHistory")
     terms: list[TermItem] = Field(default_factory=list)
+
+    @field_validator("birth_year", "death_year", mode="before")
+    @classmethod
+    def coerce_year_to_int(cls, v: str | int | None) -> int | None:
+        """birthYear and deathYear arrive as strings from the API ("1942")."""
+        if v is None:
+            return None
+        return int(v)
 
     @property
     def display_name(self) -> str:

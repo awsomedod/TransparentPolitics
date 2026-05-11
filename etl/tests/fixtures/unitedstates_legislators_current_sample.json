@@ -1,0 +1,84 @@
+[
+  {
+    "id": {
+      "bioguide": "C000127",
+      "thomas": "00172",
+      "fec": [
+        "S8WA00194",
+        "H2WA01054"
+      ],
+      "icpsr": 39310,
+      "opensecrets": "N00007836",
+      "votesmart": 27122,
+      "ballotpedia": "Maria Cantwell",
+      "wikipedia": "Maria Cantwell",
+      "wikidata": "Q22250",
+      "google_entity_id": "kg:/m/01x68t"
+    }
+  },
+  {
+    "id": {
+      "bioguide": "K000367",
+      "thomas": "01826",
+      "fec": [
+        "S6MN00267"
+      ],
+      "icpsr": 40700,
+      "opensecrets": "N00027500",
+      "votesmart": 65092,
+      "ballotpedia": "Amy Klobuchar",
+      "wikipedia": "Amy Klobuchar",
+      "wikidata": "Q22237",
+      "google_entity_id": "kg:/m/05fbpt"
+    }
+  },
+  {
+    "id": {
+      "bioguide": "S000033",
+      "thomas": "01010",
+      "fec": [
+        "H8VT01016",
+        "S4VT00033"
+      ],
+      "icpsr": 29147,
+      "opensecrets": "N00000528",
+      "votesmart": 27110,
+      "ballotpedia": "Bernie Sanders",
+      "wikipedia": "Bernie Sanders",
+      "wikidata": "Q359442",
+      "google_entity_id": "kg:/m/01_gbv"
+    }
+  },
+  {
+    "id": {
+      "bioguide": "W000802",
+      "thomas": "01823",
+      "fec": [
+        "S6RI00221"
+      ],
+      "icpsr": 40704,
+      "opensecrets": "N00027533",
+      "votesmart": 2572,
+      "ballotpedia": "Sheldon Whitehouse",
+      "wikipedia": "Sheldon Whitehouse",
+      "wikidata": "Q652066",
+      "google_entity_id": "kg:/m/07qw94"
+    }
+  },
+  {
+    "id": {
+      "bioguide": "B001261",
+      "thomas": "01881",
+      "fec": [
+        "S6WY00068"
+      ],
+      "icpsr": 40707,
+      "opensecrets": "N00006236",
+      "votesmart": 52662,
+      "ballotpedia": "John Barrasso",
+      "wikipedia": "John Barrasso",
+      "wikidata": "Q720521",
+      "google_entity_id": "kg:/m/02rsm32"
+    }
+  }
+]

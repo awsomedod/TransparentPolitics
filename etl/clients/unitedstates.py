@@ -2,7 +2,7 @@
 unitedstates/congress-legislators bulk data client.
 
 Provides the canonical cross-ID mapping for all current federal legislators.
-This is a single static JSON file download — no auth, no rate limit.
+This is a single static YAML file download — no auth, no rate limit.
 
 Source:  https://github.com/unitedstates/congress-legislators
 License: Public domain (Unlicense)
@@ -13,17 +13,22 @@ single call. This file maps bioguide_id to FEC IDs, ICPSR, OpenSecrets,
 VoteSmart, Ballotpedia, Wikipedia, and Wikidata in one place. It is updated
 by maintainers within hours of changes and is the industry-standard ID backbone
 used by GovTrack, FiveThirtyEight, and ProPublica.
+
+Note on format: the project formerly served JSON via theunitedstates.io CDN
+(now offline, returns 410). The canonical source is the YAML file on GitHub raw.
 """
 
 import logging
 
 import httpx
+import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
 _CURRENT_URL = (
-    "https://unitedstates.io/congress-legislators/legislators-current.json"
+    "https://raw.githubusercontent.com/unitedstates/congress-legislators"
+    "/main/legislators-current.yaml"
 )
 
 
@@ -89,7 +94,7 @@ class UnitedStatesClient:
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.get(self._url)
             resp.raise_for_status()
-            raw: list[dict] = resp.json()
+            raw: list[dict] = yaml.safe_load(resp.text)
 
         records = [LegislatorRecord.model_validate(row) for row in raw]
         logger.info(

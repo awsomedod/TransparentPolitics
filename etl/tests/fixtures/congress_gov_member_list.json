@@ -1,0 +1,115 @@
+{
+  "members": [
+    {
+      "bioguideId": "B001288",
+      "depiction": {
+        "attribution": "<a href=\"http://www.senate.gov/artandhistory/history/common/generic/Photo_Collection_of_the_Senate_Historical_Office.htm\">Courtesy U.S. Senate Historical Office</a>",
+        "imageUrl": "https://www.congress.gov/img/member/b001288_200.jpg"
+      },
+      "name": "Booker, Cory A.",
+      "partyName": "Democratic",
+      "state": "New Jersey",
+      "terms": {
+        "item": [
+          {
+            "chamber": "Senate",
+            "startYear": 2013
+          }
+        ]
+      },
+      "updateDate": "2026-05-05T10:30:39Z",
+      "url": "https://api.congress.gov/v3/member/B001288?format=json"
+    },
+    {
+      "bioguideId": "S001150",
+      "depiction": {
+        "attribution": "Official U.S. Senate Photo",
+        "imageUrl": "https://www.congress.gov/img/member/677d870dfdb6cf36bbb649b3_200.jpg"
+      },
+      "name": "Schiff, Adam B.",
+      "partyName": "Democratic",
+      "state": "California",
+      "terms": {
+        "item": [
+          {
+            "chamber": "House of Representatives",
+            "endYear": 2024,
+            "startYear": 2001
+          },
+          {
+            "chamber": "Senate",
+            "startYear": 2024
+          }
+        ]
+      },
+      "updateDate": "2026-04-28T10:32:24Z",
+      "url": "https://api.congress.gov/v3/member/S001150?format=json"
+    },
+    {
+      "bioguideId": "A000383",
+      "name": "Armstrong, Alan",
+      "partyName": "Republican",
+      "state": "Oklahoma",
+      "terms": {
+        "item": [
+          {
+            "chamber": "Senate",
+            "startYear": 2026
+          }
+        ]
+      },
+      "updateDate": "2026-04-28T10:30:22Z",
+      "url": "https://api.congress.gov/v3/member/A000383?format=json"
+    },
+    {
+      "bioguideId": "M001246",
+      "depiction": {
+        "attribution": "Image courtesy of the Member",
+        "imageUrl": "https://www.congress.gov/img/member/69eb9743277642362f6112ce_200.jpg"
+      },
+      "district": 11,
+      "name": "Mejia, Analilia",
+      "partyName": "Democratic",
+      "state": "New Jersey",
+      "terms": {
+        "item": [
+          {
+            "chamber": "House of Representatives",
+            "startYear": 2026
+          }
+        ]
+      },
+      "updateDate": "2026-04-24T19:47:06Z",
+      "url": "https://api.congress.gov/v3/member/M001246?format=json"
+    },
+    {
+      "bioguideId": "F000485",
+      "depiction": {
+        "attribution": "Image courtesy of the Member",
+        "imageUrl": "https://www.congress.gov/img/member/69eb95e5277642362f6112c5_200.jpg"
+      },
+      "district": 14,
+      "name": "Fuller, Clay",
+      "partyName": "Republican",
+      "state": "Georgia",
+      "terms": {
+        "item": [
+          {
+            "chamber": "House of Representatives",
+            "startYear": 2026
+          }
+        ]
+      },
+      "updateDate": "2026-04-24T19:46:09Z",
+      "url": "https://api.congress.gov/v3/member/F000485?format=json"
+    }
+  ],
+  "pagination": {
+    "count": 536,
+    "next": "https://api.congress.gov/v3/member?currentMember=true&offset=5&limit=5&format=json"
+  },
+  "request": {
+    "contentType": "application/json",
+    "format": "json"
+  }
+}
