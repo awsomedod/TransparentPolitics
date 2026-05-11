@@ -56,7 +56,9 @@ minio-data/
 opensearch-data/
 
 # LLM / model weights (never commit these)
-models/
+# Use /models/ (root-anchored) so app/db/models/ is not affected.
+/models/
+/ai/models/
 *.gguf
 *.safetensors
 *.bin

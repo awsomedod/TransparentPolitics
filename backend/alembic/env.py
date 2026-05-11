@@ -9,11 +9,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.db.base import Base
-
-# Import all model modules here so their tables are registered with
-# Base.metadata before autogenerate runs. Add one import per model file
-# as they are created in Milestone 1.
-# from app.db.models import person, office, vote, finance, news  # noqa: F401
+import app.db.models  # noqa: F401 — registers all tables with Base.metadata
 
 config = context.config
 
