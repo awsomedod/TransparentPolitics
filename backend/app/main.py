@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.politicians import router as politicians_router
 from app.core.config import settings
 
 app = FastAPI(
@@ -23,6 +24,8 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+app.include_router(politicians_router)
 
 
 @app.get("/api/v1/health", tags=["meta"])
