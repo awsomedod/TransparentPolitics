@@ -30,14 +30,6 @@ _PARTY_SHORT: dict[str, str] = {
     "Green": "G",
 }
 
-# memberType → chamber mapping from the API's own terminology
-_MEMBER_TYPE_CHAMBER: dict[str, str] = {
-    "Senator": "Senate",
-    "Representative": "House of Representatives",
-    "Delegate": "House of Representatives",
-    "Resident Commissioner": "House of Representatives",
-}
-
 
 def _get_or_create_data_source(engine: Engine) -> uuid.UUID:
     """Ensure the Congress.gov data source row exists, return its ID."""
@@ -205,7 +197,8 @@ def _upsert_person(engine: Engine, member: dict[str, Any]) -> uuid.UUID:
         conn.execute(
             text("""
                 INSERT INTO persons
-                    (id, canonical_name, display_name, birth_date, death_date, bioguide_id)
+                    (id, canonical_name, display_name, birth_date,
+                     death_date, bioguide_id)
                 VALUES (:id, :cname, :dname, :bdate, :ddate, :bid)
             """),
             {
@@ -245,7 +238,8 @@ def _upsert_officeholder(
             row = conn.execute(
                 text(
                     "SELECT id FROM officeholders "
-                    "WHERE person_id = :pid AND office_id = :oid AND start_date IS NULL"
+                    "WHERE person_id = :pid AND office_id = :oid "
+                    "AND start_date IS NULL"
                 ),
                 {"pid": person_id, "oid": office_id},
             ).fetchone()
@@ -293,7 +287,11 @@ def _upsert_officeholder(
 
 
 def _log_ingest_error(
-    engine: Engine, source: str, endpoint: str, error_message: str, raw_payload: str | None = None
+    engine: Engine,
+    source: str,
+    endpoint: str,
+    error_message: str,
+    raw_payload: str | None = None,
 ) -> None:
     """Write an error to the ingest_errors table."""
     with engine.begin() as conn:
@@ -358,7 +356,6 @@ def congress_members(
 
     for member in members:
         try:
-            # Upsert person
             person_id = _upsert_person(engine, member)
             persons_upserted += 1
 
@@ -378,7 +375,9 @@ def congress_members(
             party_history = member.get("party_history", [])
             party_name = None
             if party_history:
-                current_party = max(party_history, key=lambda p: p.get("start_year") or 0)
+                current_party = max(
+                    party_history, key=lambda p: p.get("start_year") or 0
+                )
                 party_name = current_party.get("party_name")
 
             party_id = None
@@ -396,13 +395,12 @@ def congress_members(
                     )
                 state_jid = jurisdiction_cache[state_name]
 
-            # Resolve office
+            # Resolve office — use memberType as title, chamber directly from term
             office_title = member_type or "Unknown"
-            office_chamber = _MEMBER_TYPE_CHAMBER.get(office_title, chamber)
-            office_key = f"{office_title}|{office_chamber}"
+            office_key = f"{office_title}|{chamber}"
             if office_key not in office_cache:
                 office_cache[office_key] = _get_or_create_office(
-                    engine, office_title, office_chamber, federal_jid
+                    engine, office_title, chamber, federal_jid
                 )
             office_id = office_cache[office_key]
 
@@ -411,7 +409,6 @@ def congress_members(
             end_date = date(end_year, 1, 1) if end_year else None
             is_current = end_year is None
 
-            # Upsert officeholder
             _upsert_officeholder(
                 engine,
                 person_id=person_id,
