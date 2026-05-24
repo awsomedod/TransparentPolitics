@@ -11,6 +11,8 @@ import asyncio
 from typing import Any
 
 from dagster import ConfigurableResource
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 
 from clients.congress_gov import CongressGovClient, MemberDetail, MemberSummary
 from clients.minio_snapshot import SnapshotStore
@@ -69,3 +71,12 @@ class MinioSnapshotResource(ConfigurableResource):
             bucket=self.bucket,
             secure=self.secure,
         )
+
+
+class DatabaseResource(ConfigurableResource):
+    """Dagster resource for synchronous PostgreSQL access via SQLAlchemy."""
+
+    database_url: str = "postgresql://tp:tp@localhost:5432/transparentpolitics"
+
+    def get_engine(self) -> Engine:
+        return create_engine(self.database_url, echo=False)
