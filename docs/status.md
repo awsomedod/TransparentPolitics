@@ -1,7 +1,7 @@
 # TransparentPolitics — Build Status & Architecture
 
 > **Living document.** Updated after every completed step.
-> Last updated: 2026-05-23
+> Last updated: 2026-05-24
 
 ---
 
@@ -222,17 +222,22 @@ etl/
 ├── workspace.yaml             # Dagster webserver config
 ├── clients/                   # HTTP clients for upstream sources
 │   ├── congress_gov.py        # ✅ Congress.gov API v3
+│   ├── minio_snapshot.py      # ✅ MinIO raw-response snapshot helper
 │   └── unitedstates.py        # ✅ unitedstates/congress-legislators YAML
+├── resources.py               # ✅ Dagster ConfigurableResources
 ├── assets/
 │   └── congress/
-│       └── members.py         # 🔲 TODO: main pipeline asset
+│       ├── members.py         # ✅ raw_congress_members asset (fetch + snapshot)
+│       └── upsert_members.py  # ✅ congress_members asset (snapshot → PostgreSQL)
 ├── tests/
 │   ├── fixtures/              # Captured real API responses (JSON)
 │   │   ├── congress_gov_member_list.json
 │   │   ├── congress_gov_member_detail.json
 │   │   └── unitedstates_legislators_current_sample.json
-│   ├── test_congress_gov_client.py   # ✅ 24 tests passing
-│   └── test_unitedstates_client.py   # ✅ (included in 24 above)
+│   ├── test_congress_gov_client.py        # ✅ 18 tests
+│   ├── test_unitedstates_client.py        # ✅ 6 tests
+│   ├── test_minio_snapshot.py             # ✅ 16 tests
+│   └── test_raw_congress_members_asset.py # ✅ 2 tests
 └── scripts/
     └── fetch_fixtures.py      # One-off script to refresh test fixtures from live APIs
 ```
@@ -276,24 +281,22 @@ Pydantic models defined:
 | `LegislatorIds` | `bioguide` (required), `fec` (list), `icpsr`, `opensecrets`, `votesmart`, `ballotpedia`, `wikipedia`, `wikidata`, `google_entity_id` |
 | `LegislatorRecord` | `id: LegislatorIds` — only the ID block is parsed; all other fields (bio, terms, social) are intentionally ignored in favor of Congress.gov as primary source |
 
-### Normalization rules (to be applied inline in the asset)
+### Data storage approach
 
-| Field | Raw value example | Canonical value |
-|---|---|---|
-| Party name | `"Democratic"` | `"Democrat"` |
-| Party name | `"Republican"` | `"Republican"` |
-| Party name | `"Independent"` | `"Independent"` |
-| State | `"Kentucky"` | `"KY"` |
-| State | `"California"` | `"CA"` |
-| Office type | `"Senator"` | `"US Senator"` |
-| Office type | `"Representative"` | `"US Representative"` |
+No normalization is applied — values are stored exactly as Congress.gov returns them
+(e.g. `"Democratic"` not `"Democrat"`, `"Senator"` not `"US Senator"`,
+`"Kentucky"` not `"KY"`). Normalization will be introduced when a second data source
+is added that uses different conventions, requiring reconciliation.
+
+The only derived field is `parties.short_name` (`"D"`, `"R"`, `"I"`) which Congress.gov
+does not provide but the schema requires.
 
 ### Ingest schedule
 
 | Source | Frequency | Dagster asset |
 |---|---|---|
-| Congress.gov API | Nightly 2 AM | `etl/assets/congress/members.py` (TODO) |
-| unitedstates/congress-legislators | Nightly 2 AM (same run) | Same asset |
+| Congress.gov API | Nightly 2 AM | `raw_congress_members` → `congress_members` |
+| unitedstates/congress-legislators | Not yet wired | Planned: same run, after Congress.gov |
 
 ---
 
@@ -367,8 +370,10 @@ Pydantic models defined:
 | ETL client: Congress.gov | Pydantic models, rate limiting, pagination, field validators | ✅ |
 | ETL client: unitedstates | YAML fetch + parse, ID cross-reference models | ✅ |
 | Test fixtures | Captured real API responses → JSON files | ✅ |
-| Unit tests | 24 tests covering both clients — all passing | ✅ |
-| Dagster asset: members | Fetch → MinIO → normalize → upsert → error log | 🔲 Next |
+| Unit tests | 42 tests covering clients, MinIO helper, and assets — all passing | ✅ |
+| MinIO snapshot helper | Raw API responses saved before DB writes, enables replay | ✅ |
+| Dagster asset: raw fetch | `raw_congress_members` — fetch 536 members + snapshot to MinIO | ✅ |
+| Dagster asset: upsert | `congress_members` — snapshot → PostgreSQL (no normalization) | ✅ |
 | FastAPI endpoints | `GET /api/v1/politicians`, `GET /api/v1/politicians/{id}` | 🔲 Pending |
 
 ---
@@ -394,7 +399,7 @@ Sources that are active, planned, or explicitly rejected.
 |---|---|
 | `bioguide_id` as canonical entity key | Stable, official, cross-referenced by Congress.gov, FEC, GovTrack, ProPublica. Unambiguous identity anchor for federal legislators. |
 | No `bias_rating` or `credibility_rating` on `DataSource` | Subjective editorial judgments. Inconsistent with political neutrality principle. Would require ongoing maintenance with no sourced basis. |
-| Normalization inline in the asset (not a separate module) | Avoid premature abstraction. Rules are simple and few; extract to a shared module only when duplication justifies it. |
+| No normalization (single source) | With only one data source, there is nothing to reconcile. Normalization will be added when a second source with different conventions is introduced. |
 | `unitedstates/congress-legislators` for IDs only | Congress.gov is authoritative for member data. The unitedstates project is used exclusively for its ID cross-reference mapping, which Congress.gov does not expose in a single call. |
 | `include_object` filter in Alembic | The `postgis/postgis` image installs extension tables (topology, TIGER geocoder) that Alembic's autogenerate would try to drop. Filter ensures only our own tables are managed. |
 | Fixtures from live API calls | Pydantic models are validated against real responses, not invented payloads. This caught two real bugs: `birthYear` arriving as a string, and the `unitedstates.io` CDN being offline. |
