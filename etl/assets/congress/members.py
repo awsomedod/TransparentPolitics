@@ -1,75 +1,79 @@
 """
-Congress members ETL asset.
+Congress members raw fetch asset.
 
-Pipeline: Congress.gov API + unitedstates/congress-legislators
-       → MinIO snapshot → upsert DB
-
-Data is stored as returned by the source. No vocabulary normalization is applied
-upfront — if a specific transformation is needed to satisfy a DB constraint, it
-will be added at that point with an explicit justification.
+Fetches all current Congress members from the Congress.gov API and
+snapshots raw responses to MinIO for downstream processing.
 """
 
-import io
-import json
-import logging
+from datetime import UTC, datetime
+from typing import Any
 
-from minio import Minio
-from minio.error import S3Error
+from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 
-from config import settings
-
-logger = logging.getLogger(__name__)
+from resources import CongressGovResource, MinioSnapshotResource
 
 
-# ---------------------------------------------------------------------------
-# MinIO snapshot
-# ---------------------------------------------------------------------------
-
-def _minio_client() -> Minio:
+@asset(
+    group_name="congress",
+    description=(
+        "Fetch all current Congress members (list + full details) from "
+        "Congress.gov API and snapshot raw responses to MinIO."
+    ),
+)
+def raw_congress_members(
+    context: AssetExecutionContext,
+    congress_gov: CongressGovResource,
+    minio_snapshot: MinioSnapshotResource,
+) -> MaterializeResult:
     """
-    Build a MinIO client from ETL config.
-    secure=False because local dev MinIO runs over plain HTTP on port 9000.
+    Fetches current members from Congress.gov, saves raw responses to MinIO.
+
+    Steps:
+      1. GET /member?currentMember=true (paginated) → snapshot member list
+      2. For each member, GET /member/{bioguideId} → snapshot detail
+      3. Return metadata about what was stored
     """
-    return Minio(
-        endpoint=settings.minio_endpoint,
-        access_key=settings.minio_root_user,
-        secret_key=settings.minio_root_password,
-        secure=False,
+    store = minio_snapshot.get_store()
+    today = datetime.now(UTC).date()
+
+    context.log.info("Fetching current member list from Congress.gov...")
+    members = congress_gov.fetch_current_members()
+    context.log.info("Fetched %d members", len(members))
+
+    list_data = [m.model_dump() for m in members]
+    list_meta = store.save_snapshot(
+        source="congress-gov",
+        filename="member_list.json",
+        data=list_data,
+        snapshot_date=today,
+    )
+    context.log.info("Snapshot saved: %s (%d bytes)", list_meta.object_name, list_meta.size_bytes)
+
+    bioguide_ids = [m.bioguide_id for m in members]
+    context.log.info("Fetching details for %d members...", len(bioguide_ids))
+
+    details: list[dict[str, Any]] = congress_gov.fetch_member_details_batch(bioguide_ids)
+
+    details_meta = store.save_snapshot(
+        source="congress-gov",
+        filename="member_details_all.json",
+        data=details,
+        snapshot_date=today,
+    )
+    context.log.info(
+        "Details snapshot saved: %s (%d bytes)",
+        details_meta.object_name,
+        details_meta.size_bytes,
     )
 
-
-def save_snapshot(client: Minio, object_name: str, data: list | dict) -> None:
-    """
-    Serialize data to JSON and write it to the raw-ingest MinIO bucket.
-
-    object_name: the full object path inside the bucket, e.g.
-        "congress/members/2026-05-23/member_list.json"
-    data: any JSON-serialisable structure (list or dict).
-
-    Creates the bucket automatically if it does not exist.
-    Overwrites any existing object at the same path (idempotent — re-running
-    the asset on the same day produces one file, not duplicates).
-    Uses default=str so dates and UUIDs serialise without raising TypeError.
-    """
-    bucket = settings.minio_bucket_raw
-
-    try:
-        if not client.bucket_exists(bucket):
-            client.make_bucket(bucket)
-            logger.info("Created MinIO bucket '%s'", bucket)
-    except S3Error as exc:
-        logger.error("MinIO bucket check/create failed: %s", exc)
-        raise
-
-    payload = json.dumps(data, indent=2, default=str).encode("utf-8")
-
-    client.put_object(
-        bucket_name=bucket,
-        object_name=object_name,
-        data=io.BytesIO(payload),
-        length=len(payload),
-        content_type="application/json",
-    )
-    logger.info(
-        "Snapshot saved: %s/%s (%d bytes)", bucket, object_name, len(payload)
+    return MaterializeResult(
+        metadata={
+            "member_count": MetadataValue.int(len(members)),
+            "list_snapshot": MetadataValue.text(list_meta.object_name),
+            "details_snapshot": MetadataValue.text(details_meta.object_name),
+            "snapshot_date": MetadataValue.text(today.isoformat()),
+            "total_bytes": MetadataValue.int(
+                list_meta.size_bytes + details_meta.size_bytes
+            ),
+        },
     )

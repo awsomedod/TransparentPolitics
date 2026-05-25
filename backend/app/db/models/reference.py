@@ -44,7 +44,9 @@ class Office(Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     level: Mapped[str] = mapped_column(String(50), nullable=False)   # federal|state|local
     chamber: Mapped[str | None] = mapped_column(String(50))          # house|senate|executive
-    jurisdiction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("jurisdictions.id"), nullable=False)
+    jurisdiction_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("jurisdictions.id"), nullable=False,
+    )
 
 
 class DataSource(Base):
